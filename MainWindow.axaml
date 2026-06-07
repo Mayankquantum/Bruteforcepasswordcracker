@@ -1,7 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="code.MainWindow"
-        Width="540" Height="470"
+        Width="560" Height="680"
         Title="Brute Force Password Cracker">
     <StackPanel Margin="20" Spacing="10">
         <TextBlock Text="Brute Force Password Cracker"
@@ -34,5 +34,11 @@
         <!-- (5) result output -->
         <TextBlock Text="Result:" FontWeight="Bold"/>
         <TextBox x:Name="ResultBox" IsReadOnly="True" FontWeight="Bold"/>
+
+        <!-- (8) performance log: single vs multi thread -->
+        <Button x:Name="PerfButton" Content="Run Performance Test (1 vs N threads)"
+                Click="OnPerfClick" IsEnabled="False"/>
+        <TextBox x:Name="PerfBox" IsReadOnly="True" TextWrapping="Wrap"
+                 Height="130" AcceptsReturn="True"/>
     </StackPanel>
 </Window>

@@ -11,6 +11,7 @@ public partial class MainWindow : Window
 {
     private readonly PasswordGenerator _generator = new();
     private readonly PasswordHasher _hasher = new();
+    private readonly PerformanceLogger _perfLogger = new();
     private BruteForceEngine? _engine;
 
     private string _targetHash = "";
@@ -23,28 +24,29 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        // Ticks 10x/sec to refresh the elapsed-time label while running.
         _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
         _timer.Tick += (_, _) =>
             ElapsedText.Text = $"Elapsed: {_stopwatch.Elapsed.TotalSeconds:F1} s";
     }
 
-    // (1) PASSWORD CREATION: random password, hash it, show only the hash.
+    // (1) PASSWORD CREATION
     private void OnGenerateClick(object? sender, RoutedEventArgs e)
     {
-        string password = _generator.Generate();   // 4 or 5 chars, never displayed
+        string password = _generator.Generate();
         _targetHash = _hasher.Hash(password);
 
         HashBox.Text = _targetHash;
         ResultBox.Text = "";
+        PerfBox.Text = "";
         StatusText.Text = "Password generated. Ready to attack.";
         TriedText.Text = "Candidates tried: 0";
         ElapsedText.Text = "Elapsed: 0.0 s";
         StartButton.IsEnabled = true;
         StopButton.IsEnabled = false;
+        PerfButton.IsEnabled = true;
     }
 
-    // (2) START: run the multi-threaded attack OFF the UI thread.
+    // (2) START
     private void OnStartClick(object? sender, RoutedEventArgs e)
     {
         if (_targetHash.Length == 0) return;
@@ -53,7 +55,6 @@ public partial class MainWindow : Window
         _engine = new BruteForceEngine();
         ThreadsText.Text = $"Threads: {_engine.ThreadCount} (CPU cores - 1)";
 
-        // Engine events fire from WORKER threads -> marshal to UI thread.
         _engine.OnProgress += tried =>
             Dispatcher.UIThread.Post(() => TriedText.Text = $"Candidates tried: {tried:N0}");
 
@@ -73,6 +74,7 @@ public partial class MainWindow : Window
                 GenerateButton.IsEnabled = true;
                 StartButton.IsEnabled = true;
                 StopButton.IsEnabled = false;
+                PerfButton.IsEnabled = true;
                 StatusText.Text = _wasFound ? "Done." : "Search finished — not found.";
             });
 
@@ -81,18 +83,56 @@ public partial class MainWindow : Window
         GenerateButton.IsEnabled = false;
         StartButton.IsEnabled = false;
         StopButton.IsEnabled = true;
+        PerfButton.IsEnabled = false;
         Progress.IsIndeterminate = true;
         _stopwatch.Restart();
         _timer.Start();
 
         string target = _targetHash;
-        Task.Run(() => _engine.Run(target));   // background, so the window stays responsive
+        Task.Run(() => _engine.Run(target));
     }
 
-    // (3) STOP: halt all threads.
+    // (3) STOP
     private void OnStopClick(object? sender, RoutedEventArgs e)
     {
         _engine?.Stop();
         StatusText.Text = "Stopping...";
+    }
+
+    // (8) PERFORMANCE TEST: same hash, 1 thread vs (cores-1) threads.
+    private void OnPerfClick(object? sender, RoutedEventArgs e)
+    {
+        if (_targetHash.Length == 0) return;
+        string target = _targetHash;
+
+        GenerateButton.IsEnabled = false;
+        StartButton.IsEnabled = false;
+        StopButton.IsEnabled = false;
+        PerfButton.IsEnabled = false;
+        StatusText.Text = "Performance test running — single-thread pass first, may take a while.";
+        PerfBox.Text = "Running single-thread pass...";
+
+        Task.Run(() =>
+        {
+            var engine = new BruteForceEngine();
+            int multiThreads = engine.ThreadCount;
+
+            TimeSpan single = engine.Run(target, 1);              // forced 1 thread
+            Dispatcher.UIThread.Post(() =>
+                PerfBox.Text = $"Single-thread: {single.TotalSeconds:F2} s\nRunning multi-thread pass...");
+
+            TimeSpan multi = engine.Run(target);                   // (cores-1) threads
+            string summary = _perfLogger.LogComparison(target, single, multi, multiThreads);
+
+            Dispatcher.UIThread.Post(() =>
+            {
+                PerfBox.Text = summary + $"Log file:\n{_perfLogger.LogPath}";
+                StatusText.Text = "Performance test done.";
+                GenerateButton.IsEnabled = true;
+                StartButton.IsEnabled = true;
+                StopButton.IsEnabled = false;
+                PerfButton.IsEnabled = true;
+            });
+        });
     }
 }

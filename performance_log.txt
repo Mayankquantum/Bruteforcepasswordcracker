@@ -1,0 +1,6 @@
+--- Performance comparison @ 2026-06-07 15:03:24 ---
+Target hash  : 1ad70faa1d5cca1efd7799a246257ca2f4804870040ed09ce03689a77c9bcbe4
+Single-thread (1 thread)       : 4,70 s
+Multi-thread  (7 threads)      : 1,36 s
+Speedup (single / multi)       : 3,45x
+
