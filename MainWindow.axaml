@@ -1,9 +1,38 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-        x:Class="BruteForcePasswordCracker.MainWindow"
-        Title="BruteForcePasswordCracker">
-    Welcome to Avalonia!
+        x:Class="code.MainWindow"
+        Width="540" Height="470"
+        Title="Brute Force Password Cracker">
+    <StackPanel Margin="20" Spacing="10">
+        <TextBlock Text="Brute Force Password Cracker"
+                   FontSize="20" FontWeight="Bold"/>
+
+        <!-- (1) password creation -->
+        <Button x:Name="GenerateButton" Content="Generate Password"
+                Click="OnGenerateClick"/>
+        <TextBlock Text="Target hash (SHA256 + static salt):"/>
+        <TextBox x:Name="HashBox" IsReadOnly="True" TextWrapping="Wrap"/>
+
+        <!-- (2) start / stop -->
+        <StackPanel Orientation="Horizontal" Spacing="10">
+            <Button x:Name="StartButton" Content="Start"
+                    Click="OnStartClick" IsEnabled="False"/>
+            <Button x:Name="StopButton" Content="Stop"
+                    Click="OnStopClick" IsEnabled="False"/>
+        </StackPanel>
+
+        <TextBlock x:Name="StatusText" Text="Idle"/>
+        <TextBlock x:Name="ThreadsText" Text=""/>
+
+        <!-- (3) progress display -->
+        <ProgressBar x:Name="Progress" IsIndeterminate="False" Height="14"/>
+        <TextBlock x:Name="TriedText" Text="Candidates tried: 0"/>
+
+        <!-- (4) elapsed time display -->
+        <TextBlock x:Name="ElapsedText" Text="Elapsed: 0.0 s"/>
+
+        <!-- (5) result output -->
+        <TextBlock Text="Result:" FontWeight="Bold"/>
+        <TextBox x:Name="ResultBox" IsReadOnly="True" FontWeight="Bold"/>
+    </StackPanel>
 </Window>
